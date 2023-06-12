@@ -29,7 +29,7 @@ if [ -n $ISP ]; then
   ISP="@$ISP"
 fi
 
-curl_test=`curl '1.1.1.1' -sS`
+curl_test=`curl '1.1.1.1' -s|grep href`
 if [ -n "${curl_test}" ]; then
   # 未登录时访问任意网址会得到一个登录跳转的html
   # 登录跳转链接里有user_ip、ac_ip、ac_name参数
