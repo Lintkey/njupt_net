@@ -7,7 +7,9 @@ unset https_proxy
 unset ftp_proxy
 
 ac_data=`cat ~/ac_data.txt`
-host_name="p.njupt.edu.cn"
+DOMAIN="p.njupt.edu.cn"
+LOGOUT_PORT=801
+LOGOUT_PATH="/eportal/?c=ACSetting&a=Logout"
 
-curl "http://${host_name}:801/eportal/?c=ACSetting&a=Logout" \
+curl "http://${DOMAIN}:${LOGOUT_PORT}${LOGOUT_PATH}" \
   --data "${ac_data}"
