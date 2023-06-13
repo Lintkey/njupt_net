@@ -1,5 +1,5 @@
 #!/bin/sh
-#关闭代理
+# 关闭代理
 unset no_proxy
 unset all_proxy
 unset http_proxy
