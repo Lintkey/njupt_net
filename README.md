@@ -1,8 +1,14 @@
 # njupt_net
 
-校园网drcom登录脚本，自动选定(可配置)网卡登录(防utun劫持)
+校园网drcom登录脚本，如clash开启utun，需添加规则`- 'IP-CIDR,1.1.1.1/32,DIRECT,no-resolve'`
 
-# 原理
+# 复用相关问题
+
+## 如何应用到其他DrCOM认证服务器
+
+看脚本中的扩展参数，修改对应参数至服务器要求。具体获取方法请参照下面内容
+
+## 原理及如何确定参数
 
 登录的过程本质上就是发个http请求给认证服务器，具体的参数解释可以在认证网站的html中可以看到，以njupt仙林校区为例：
 
@@ -46,7 +52,7 @@ carrier='{"yys":{"title":"服务类型","mode":"radiobutton","data":[{"id":"1","
 ...
 ```
 
-但是上面的内容仅供参考，因为那是未配置的默认参数
+但是上面的内容仅供参考，因为那是未配置的默认参数，具体需要分析登录/登出时的网络请求
 
 F12分析登录时的请求，可以看到登录POST的URL格式如下
 
@@ -55,16 +61,18 @@ http://10.10.244.11:801/eportal/?c=ACSetting&a=Login&...
 http://${v4serip}:${authloginport}${authloginpath}&...
 ```
 
-后面很多个参数中，未在html中有描述的有`wlanacip`、`wlanacname`，这个推测可知是路由器IP和唯一设备名
+和前面`curl p.njupt.edu.cn`内容不同的是，登出POST的端口也是`801`
 
 结合前面内容可以猜测，往指定链接POST并带上所需的参数即可完成登录/登出/查询
 
-抓包分析到的URL带了一堆参数，但实际上起作用的仅有几个
+F12网络分析到的URL带了一堆参数，思考分析+测试后，起作用的应该仅有以下几个：
 
 + `authloginpath`中的参数：指明要登录/登出/查询
-+ `DDDDD`：账户(包含运营商)，格式为`,0,账户@运营商`，若使用校园网则是`,0,账户`
++ `DDDDD`：账户信息，格式为`,0,{账户}{运营商}`，例`DDDDD=,0,B11451419@cmcc`
+  
+  njupt的运营商代号为：移动`@cmcc`、电信`@njxy`、校园网` `(空)
 + `upass`：密码
-+ `wlanacip`、`wlanacname`：路由器身份信息，这两个仅需传一个即可
++ `wlanacip`、`wlanacname`：路由器IP、路由器设备名，这两个仅需传一个即可
 
 剩下的问题就是获取`wlanacip`、`wlanacname`，这个在访问任意网页时弹出的登录跳转html中有，未登录时`curl baidu.com`即可看到：
 
@@ -87,6 +95,25 @@ Authentication is required. Click <a href="http://10.10.244.11/a79.htm?wlanuseri
 curl "http://10.10.144.11:801/eportal/?c=ACSetting?a=Login"\
       --data-urlencode "DDDDD=,0,${USER}${ISP}"\
       --data-urlencode "upass=${PWD}"\
-      --data "wlanacname=${an_name}"
+      --data "wlanacname=${ac_name}"
 # 宿舍路由器等固定应用场所，也可以获取`ac_name`后替换，即可实现一行命令登录
+# 不推荐用`ac_ip`，因为停电重启后会重新分配路由IP
 ```
+
+F12分析登出URL，发现只需修改`a=Logout`。另外额外参数中，测试出仅需传`wlanacip`、`wlanacname`中任意一个
+
+```sh
+curl "http://10.10.144.11:801/eportal/?c=ACSetting?a=Logout"\
+      --data "wlanacname=${ac_name}"
+```
+
+## 如何避开utun解析
+
+两种方案：
+
+1. 识别网卡，使用上网卡`curl`登录(防止utun影响解析)，这个没法移植到win(有的话可以提issue)
+2. 不识别网卡，添加规则让`1.1.1.1/32`直连(`DIRECT`)且不二次解析(`no-resolve`)，这样直接`curl`登录不受utun解析影响
+
+方案一需要识别网卡，比较麻烦且不稳定，而且检测连接需要尝试`curl 1.1.1.1`直至失败，等待时间久
+
+方案二`curl 1.1.1.1`不受影响，可以及时响应，但无法应对以下情况：如果响应的跳转链接网址是域名而非裸IP，utun依然会影响登录网址的解析
