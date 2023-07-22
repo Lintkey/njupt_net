@@ -2,6 +2,18 @@
 
 校园网drcom登录脚本，如clash开启utun，需添加规则`- 'IP-CIDR,1.1.1.1/32,DIRECT,no-resolve'`
 
+# 一行命令版(针对njupt)
+
+```sh
+curl "https://p.njupt.edu.cn:802/eportal/portal/login?user_account=USER&user_password=PWD"
+```
+
+指令中的USER、PWD需要替换成 **编码后的** 账户、密码，具体获取方法如下：
+
+随便找一个UrlEncode编码网站，例如[https://tool.chinaz.com/tools/urlencode.aspx](https://tool.chinaz.com/tools/urlencode.aspx)
++ 输入密码，点击UrlEncode编码，即可获得编码后的密码(不是加密)
++ 账户则需要分情况修改。如果是校园网裸连，输入`,0,账户`，电信则输`,0,账户@njxy`，移动则输`,0,账户@cmcc`。然后点击UrlEncode编码，即可获得编码后的账户
+
 # 复用相关问题
 
 ## 如何应用到其他DrCOM认证服务器
@@ -35,8 +47,10 @@ LOGIN_PATH="/eportal/?c=ACSetting&a=Login"
 CHECK_PATH="/eportal/?c=ACSetting&a=checkScanIP"
 
 # 下面是url参数
-"DDDDD=${USER}${ISP}"
+"DDDDD=${USER}${ISP}"  # ISP为`@ + 运营商代号`，例如南京电信 `@njxy`，校园网留空，这个看学校情况
 "upass=${PASSWORD}"
+"wlanacname="     # 这个要脚本分析获取
+"wlanacip="       # 同上，但是登录时仅需提供两者中的一个
 ```
 
 需要注意的是，账户、密码放入参数需要URL转码，linux下可使用`jq`指令实现
