@@ -45,6 +45,8 @@ if [ -n "${curl_test}" ]; then
   fi
 
   curl "${DOMAIN}:${HTTP_PORT}${LOGIN_PATH}&user_account=${ACCOUNT}&user_password=${PASSWORD}"
+  echo
 else
   echo "Connected!"
 fi
+curl "https://p.njupt.edu.cn:802/eportal/portal/online_list?callback=drcom"
